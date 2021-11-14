@@ -1,0 +1,204 @@
+<!doctype html>
+<head>
+    <title>Dot: Interactive dot plot for genome-genome alignments</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="css/VisToolTemplate.css"/>
+    <link rel="stylesheet" href="css/SuperUI.css"/>
+</head>
+<body>
+
+<nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="javascript:window.location.href=location.protocol+'//'+location.host+location.pathname">Dot</a>
+        </div>
+        <ul class="nav navbar-nav">
+            <li class="page_tab" id="first_tab"><a href="javascript:void(0)" onclick="changePage('#first');">Inputs</a></li>
+            <li class="page_tab" id="main_tab"><a href="javascript:void(0)" onclick="changePage('#main');">Visualization</a></li>
+            <li class="page_tab" id="tutorial_tab"><a href="javascript:void(0)" onclick="changePage('#tutorial');">Tutorial</a></li>
+            <li class="page_tab" id="about_tab"><a href="javascript:void(0)" onclick="changePage('#about');">About</a></li>
+        </ul>
+    </div>
+</nav>
+
+
+<div id="messagesContainer"></div>
+
+<div class="page" id="first">
+
+    <div class="center">
+
+        <h1>Add some data</h1>
+        <!-- Special InputPanel class defined in the javascript code will fill out this div: -->
+        <div id="inputPanel"></div>
+
+
+        <h2>Or try an example:</h2>
+        <!-- Examples defined in the javascript code will fill out this div: -->
+        <div id="examples"></div>
+    </div>
+
+</div>
+
+<div class="page" id="tutorial">
+    <h2>Tutorial</h2>
+
+    <!-- Example tutorial page -->
+    <div class="panel panel-default">
+        <div class="panel-heading">Getting started</div>
+        <div class="panel-body">
+            <ol>
+                <li>Select an example or enter your own alignments file URL. To generate the alignments file, see the <a
+                        href="https://github.com/marianattestad/dot">README</a></li>
+                <li>Optionally add an annotation file in CSV format. The CSV file must have a header that includes the following fields:
+                    "ref,ref_start,ref_end,name" or "query,query_start,query_end,name", depending on which side the annotations belong to.
+                </li>
+                <li>Zoom in on a region of interest by dragging a rectangle around it. Zoom back out by double-clicking.</li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+<div class="page" id="about">
+    <h2>About</h2>
+
+    <!-- Example about page -->
+    <div class="panel panel-default">
+        <div class="panel-heading">Information</div>
+        <div class="panel-body">
+            <p>Dot is open source at <a href="https://github.com/marianattestad/dot">https://github.com/marianattestad/dot</a>.</p>
+            <p>On DNAnexus, the featured project <a href="https://platform.dnanexus.com/projects/F8vbb100q83Zg1K17gF0FVV8">MUMmer + Dot</a> contains a
+                kit of things to get started with:
+            <ul>
+                <li>An Applet for running MUMmer's nucmer aligner that includes DotPrep.py</li>
+                <li>A shortcut to Dot that automatically creates the necessary access URLs for your files stored on DNAnexus</li>
+                <li>Example initial data and results of the Applet, ready to use in Dot</li>
+            </ul>
+            If you cannot make a free DNAnexus account, then just download the <a href="https://github.com/MariaNattestad/dot/blob/master/DotPrep.py">DotPrep.py</a>
+            script and run it on the output from MUMmer's nucmer aligner, which will give you the same results as the Applet on DNAnexus.
+            </p>
+        </div>
+    </div>
+
+</div>
+
+<!-- Want to add more pages? Just use the tutorial and about pages as templates. You will need another page_tab in the navigation bar and another page here -->
+
+
+<div class="page" id="main">
+    <div id="plotting-area">
+
+    </div>
+</div>
+
+<div id="spinner"></div>
+
+<!-- JavaScript files -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.11.0/d3.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/4.3.6/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ramda/0.25.0/ramda.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+        crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+<!-- Takes care of requesting the right inputs from the user -->
+<script src="js/InputPanel.js"></script>
+
+<!-- Load Dot and its specific dependencies -->
+<script src="js/MultiSegmentScale.js"></script>
+<script src="js/SuperUI.js"></script>
+<script src="js/Dot.js"></script>
+
+<!-- app.js holds your visualization. Edit app.js to change the visualization -->
+<script src="app.js"></script>
+
+<!-- VisToolTemplate.js sets up the looks and basic functionality of the site. Edit VisToolTemplate.js to control what inputs your app should take from the user or how it should parse the data -->
+<script src="js/VisToolTemplate.js"></script>
+
+
+<script type="text/javascript">
+
+    var layout = VTTGlobal.layout;
+
+    var _app_area = d3.select('#plotting-area');
+
+    var _scales = {x: null, y: null};
+
+    /* Set up the Dot app */
+    var _dot = new DotApp(_app_area, {height: layout.svg.height, width: layout.svg.width});
+
+
+    // Define the inputs needed for this app
+    var inputSpec = {
+        // alignments: {name: "Alignments", required: true, callback: readTSVorCSV},
+        coords: {name: "Coords", required: true, callback: getRandomAccess},
+        index: {name: "Coords index", required: true, callback: readAsString},
+        annotations: {name: "Annotations", required: false, many: true, callback: readTSVorCSV},
+    };
+    // the keys input and someOtherInput become the names for those parameters you can pass in through the URL (see examples' urlSuffix), and how you refer to each file within the visualization code in app.js
+
+    // Note: readTSVorCSV is a function defined in VisToolTemplate.js, which will be called when a file is chosen. readTSVorCSV will parse the data, read it into memory, and call other functions that launch the visualization in app.js
+
+    setInputSpec(inputSpec);
+
+    // Define some examples
+    const myBaseUrl = 'http://0.0.0.0:8888/tests'
+    const myBaseUrlExp = `${myBaseUrl}/q_FAM14217_r_FAM19036`
+    const myBaseUrl36 = `${myBaseUrl}/q_FAM19036i_r_FAM19036`
+    const myBaseUrlOutdir = `${myBaseUrl}/outdir`
+    var urlRoot = "https://storage.googleapis.com/sandbox.bio/dot",
+        urlCoords = `${urlRoot}/gorilla_to_GRCh38.coords`,
+        urlAnnotations = `${urlRoot}/gencode.v27.genes.bed`;
+    var examples = [
+        {
+            name: "Gorilla aligned to Human GRCh38",
+            hover: "Gorilla aligned to Human GRCh38",
+            urlSuffix: `?coords=${urlCoords}&index=${urlCoords}.idx`
+        },
+        {
+            name: "Gorilla aligned to Human GRCh38, with human gene annotation",
+            hover: "Gorilla aligned to Human GRCh38",
+            urlSuffix: `?coords=${urlCoords}&index=${urlCoords}.idx&annotations=${urlAnnotations}`
+        },
+        {
+            name: "synth_data",
+            hover: "synth_data",
+            urlSuffix: `?coords=${myBaseUrl}/synth_data/output.coords&index=${myBaseUrl}/synth_data/output.coords.idx`
+        },
+        {
+            name: "q_FAM14217_r_FAM19036",
+            hover: "q_FAM14217_r_FAM19036",
+            urlSuffix: `?coords=${myBaseUrlExp}/output.coords` +
+                `&index=${myBaseUrlExp}/output.coords.idx` +
+                `&annotations=${myBaseUrl}/dot_annotations/FAM14217.qry`
+        },
+        {
+            name: "q_FAM19036i_r_FAM19036",
+            hover: "q_FAM19036i_r_FAM19036",
+            urlSuffix: `?coords=${myBaseUrl36}/output.coords` +
+                `&index=${myBaseUrl36}/output.coords.idx` +
+                `&annotations=${myBaseUrl36}/output.annotations`
+        },
+        {
+            name: "outdir",
+            hover: "outdir",
+            urlSuffix: `?coords=${myBaseUrlOutdir}/out.coords` +
+                `&index=${myBaseUrlOutdir}/out.coords.idx` +
+                `&annotations=${myBaseUrlOutdir}/out.qry.annotations`
+        }
+    ];
+
+    setExamples(examples);
+
+    // If you need to communicate with the user, you can send them a message like this:
+    // showMessage("Welcome to Dot, see the Tutorial page for information on getting started.", "info");
+    // Use "success", "warning", "danger", or "info" to make the alert box color match the sentiment of your message
+
+
+</script>
+</body>
+
+
