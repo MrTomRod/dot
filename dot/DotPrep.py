@@ -22,7 +22,7 @@ class DotPrep:
     def __init__(self):
         self.nucmer = Nucmer()
 
-    def run_shell(self, outdir: str, fasta_ref: str, fasta_qry: str, mincluster: int = 65, gbk_ref: str = None, gbk_qry: str = None) -> str:
+    def run_shell(self, outdir: str, fasta_ref: str, fasta_qry: str, mincluster: int = 65, gbk_ref: str = None, gbk_qry: str = None, add_standalone_html: bool = True) -> str:
         """
         Run nucmer on FASTAs, run DotPrep, and optionally create Dot annotation files based from GenBank files.
 
@@ -32,6 +32,7 @@ class DotPrep:
         :param gbk_ref: path to first GenBank file (optional)
         :param gbk_qry: path to second GenBank file (optional)
         :param mincluster: sets the minimum length of a cluster of matches
+        :param add_standalone_html: creates a html file that can directly be opened in the browser
         """
         assert not os.path.isdir(outdir), f'{outdir=} already exists!'
         os.makedirs(outdir)
@@ -47,6 +48,9 @@ class DotPrep:
         if gbk_qry:
             with open(f'{outdir}/out.qry.annotations', 'w') as f:
                 f.write(self.gbk_to_annotation_file(gbk=gbk_qry, is_ref=False, index=index))
+
+        if add_standalone_html:
+            self.add_standalone_html(outdir=outdir, outfile=f'{outdir}/dotplot.html')
 
         return f'Complete success. {outdir=}'
 
@@ -211,6 +215,32 @@ class DotPrep:
                     loci.add((start, end))
 
         return result
+
+    @staticmethod
+    def add_standalone_html(outdir: str, outfile: str) -> None:
+        import pkg_resources
+        with open(pkg_resources.resource_filename(__name__, 'standalone.html')) as f:
+            html = f.read()
+
+        # optional
+        for filename in [
+            'out.ref.annotations',
+            'out.qry.annotations'
+        ]:
+            if os.path.isfile(f'{outdir}/{filename}'):
+                with open(f'{outdir}/{filename}') as f:
+                    html = html.replace(f'!!!{filename}!!!', f.read(), 1)
+
+        # mandatory
+        for filename in [
+            'out.coords.idx',
+            'out.coords',
+        ]:
+            with open(f'{outdir}/{filename}') as f:
+                html = html.replace(f'!!!{filename}!!!', f.read(), 1)
+
+        with open(outfile, 'w') as f:
+            f.write(html)
 
     @staticmethod
     def _get_flipped_scaffolds(index: str) -> {str: str}:

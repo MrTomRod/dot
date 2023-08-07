@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <title>Dot: Interactive dot plot for genome-genome alignments</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.16.0/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-scale-chromatic@1.5.0/dist/d3-scale-chromatic.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/4.3.6/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ramda/0.25.0/ramda.min.js"></script>
+    <script src="https://dot.sandbox.bio/js/Dot.js"></script>
+    <script src="https://dot.sandbox.bio/js/MultiSegmentScale.js"></script>
+    <script src="https://dot.sandbox.bio/js/SuperUI.js"></script>
+    <script src="https://dot.sandbox.bio/js/VisToolTemplate.js"></script>
+</head>
+
+<style>
+    /* hide unnecessary entries */
+    #inspectorArea, #linkOutArea, #action_panel {
+        display: none !important;
+    }
+
+    #dotplot-settings-overlay {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        backdrop-filter: blur(10px);
+        flex-direction: column;
+        display: none;
+    }
+
+    #mainLeft, #plotting-area {
+        display: unset !important;
+        margin: unset !important;
+        width: 100% !important;
+    }
+</style>
+
+<div id="dotplot-settings-overlay">
+    <p style="text-align: center"><br>Press ESC to hide settings.</p>
+</div>
+
+<div id="messagesContainer"></div>
+
+<div class="page" id="main">
+    <div id="plotting-area">
+
+    </div>
+</div>
+
+<div id="spinner"></div>
+
+<div id="coords" style="display: none">!!!out.coords!!!</div>
+
+<div id="coords-idx" style="display: none">!!!out.coords.idx!!!</div>
+
+<div id="annotations-qry" style="display: none">!!!out.ref.annotations!!!</div>
+
+<div id="annotations-ref" style="display: none">!!!out.qry.annotations!!!</div>
+
+<script>
+    let layout = VTTGlobal.layout
+    let _app_area = d3.select('#plotting-area')
+    let _scales = {x: null, y: null}
+    let _dot = new DotApp(_app_area, {height: window.innerHeight, width: window.innerWidth * 1.42})
+    _dot.dotplot.set_style("show grid lines (query)", "always")
+
+    // load dotplot
+    _dot.setCoords(document.getElementById('coords').textContent, document.getElementById('coords-idx').textContent)
+    // load ref annotations
+    try {
+        _dot.addAnnotationData({
+            key: 'ref', data: Papa.parse(document.getElementById('annotations-ref').textContent, {
+                header: true,
+                dynamicTyping: true,
+                skipEmptyLines: true,
+                complete: console.log
+            }).data
+        })
+    } catch (error) {
+        console.error(error)
+        console.error('Failed to load reference annotations')
+    }
+    // load qry annotations
+    try {
+        _dot.addAnnotationData({
+            key: 'qry', data: Papa.parse(document.getElementById('annotations-qry').textContent, {
+                header: true,
+                dynamicTyping: true,
+                skipEmptyLines: true,
+                complete: console.log
+            }).data
+        })
+    } catch (error) {
+        console.error(error)
+        console.error('Failed to load query annotations')
+    }
+
+    // improve UI
+    const dotplotSettingsOverlay = document.getElementById('dotplot-settings-overlay')
+    const uiContainer = document.getElementById('UI_container')
+    uiContainer.style.display = 'none'
+    const helpText = document.getElementById('dotplot').nextElementSibling.firstChild
+    helpText.textContent = helpText.textContent + ' Press ESC to show settings.'
+
+    // Show settings only on ESC press
+    window.addEventListener('keydown', function (e) {
+        if ((e.key === 'Escape' || e.key === 'Esc')) {
+            if (!dotplotSettingsOverlay.contains(uiContainer)) {
+                uiContainer.style.display = ''
+                dotplotSettingsOverlay.prepend(uiContainer)
+            }
+            dotplotSettingsOverlay.style.display = dotplotSettingsOverlay.style.display === 'flex' ? 'none' : 'flex'
+        }
+    }, true);
+
+
+</script>

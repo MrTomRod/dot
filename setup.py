@@ -11,7 +11,7 @@ README = (HERE / 'README.md').read_text()
 # This call to setup() does all the work
 setup(
     name='dot',
-    version='0.1.0',
+    version='0.1.1',
     description='Dot is an interactive dot plot viewer for genome-genome alignments',
     long_description=README,
     long_description_content_type='text/markdown',
@@ -32,4 +32,6 @@ setup(
             'dot=dot.DotPrep:main',
         ]
     },
+    include_package_data=True,
+    package_data={'': ['dot/standalone.html']},
 )
