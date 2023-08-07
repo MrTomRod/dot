@@ -30,8 +30,8 @@ class Nucmer:
 
         if clean_input:
             # create clean input fastas in temp dir
-            fasta_ref = self.remove_fasta_prefix(in_fasta=fasta_ref, out_fasta=f'{workdir}/{os.path.basename(fasta_ref)}.cleaned')
-            fasta_qry = self.remove_fasta_prefix(in_fasta=fasta_qry, out_fasta=f'{workdir}/{os.path.basename(fasta_ref)}.cleaned')
+            fasta_ref = self.remove_fasta_prefix(in_fasta=fasta_ref, out_fasta=f'{workdir}/ref.fasta.cleaned')
+            fasta_qry = self.remove_fasta_prefix(in_fasta=fasta_qry, out_fasta=f'{workdir}/qry.fasta.cleaned')
 
         cmd = [self.nucmer_path]
         if arguments is not None:
