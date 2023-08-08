@@ -23,9 +23,11 @@ nucmer = Nucmer()
 dotprep = DotPrep()
 
 
-def rm_dir(dir: str) -> str:
+def rm_dir(dir: str, mk: bool = False) -> str:
     if os.path.isdir(dir):
         shutil.rmtree(dir)
+    if mk:
+        os.makedirs(dir)
     return dir
 
 
@@ -80,6 +82,7 @@ ref_start,ref_end,query_start,query_end,ref,query,tag
 
     def test_dotprep_shell(self):
         msg = dotprep.run_shell(
+            html_out='tests/outdir/standalone.html',
             outdir=rm_dir('tests/outdir'),
             fasta_ref=fasta_ref, fasta_qry=fasta_qry,
             gbk_ref=gbk_ref, gbk_qry=gbk_qry,
@@ -117,8 +120,11 @@ ref_start,ref_end,query_start,query_end,ref,query,tag
     def test_dotprep_delta(self):
         dot_prep_orig.run(DotPrepArgs(delta='tests/fakedelta/out.delta.original', output_filename='tests/fakedelta/out'))
 
-    def test_dotprep_synth_a(self):
-        Nucmer().align(fasta_ref='tests/synth_data/REFERENCE.fna', fasta_qry='tests/synth_data/QUERY.fna', workdir='tests/synth_data')
-
     def test_dotprep_synth(self):
-        dot_prep_orig.run(DotPrepArgs(delta='tests/synth_data/out.delta', output_filename='tests/synth_data/out'))
+        Nucmer().align(
+            fasta_ref='tests/synth_data/in/REFERENCE.fna',
+            fasta_qry='tests/synth_data/in/QUERY.fna',
+            workdir=rm_dir('tests/synth_data/out', mk=True)
+        )
+        dot_prep_orig.run(DotPrepArgs(delta='tests/synth_data/out/out.delta', output_filename='tests/synth_data/out/out'))
+        dotprep.add_standalone_html(outdir='tests/synth_data/out', outfile='tests/synth_data/out/standalone.html')

@@ -30,7 +30,10 @@ pip install git+https://github.com/MrTomRod/dot.git
 **Create all files required for Dot in one command**
 
 ```shell
-dot run --outdir /path/to/outdir --fasta-ref ref.fna --fasta-qry qry.fna --gbk-ref ref.gbk --gbk-qry qry.gbk
+# just the dotplot
+dot run --html-out /path/to/dotplot.html --fasta-ref ref.fna --fasta-qry qry.fna
+# dotplot + genes
+dot run --html-out /path/to/dotplot.html --fasta-ref ref.fna --fasta-qry qry.fna --gbk-ref ref.gbk --gbk-qry qry.gbk
 ```
 
 This will:
@@ -39,14 +42,17 @@ This will:
 2) run DotPrep -> `out.coords`, `out.coords.idx`, `out.uniqueAnchorFiltered_l10000.delta.gz`
 3) create a reference Dot annotation file -> `out.ref.annotations`
 4) create a query Dot annotation file -> `out.qry.annotations`
+5) create a standalone html file that can be opened in a browser
 
-It is possible to run steps 1 and 2:
+To keep the intermediary files, add the argument `--outdir /path/to/outdir`
+
+It is possible to run steps 1 and 2 only, to create a dotplot without genes:
 
 ```shell
 dot run --outdir /path/to/outdir --fasta-ref ref.fna --fasta-qry qry.fna
 ```
 
-And to add annotations in a second step:
+And to add genes in a second step:
 
 ```shell
 dot create-annotations --gbk ref.gbk --is-ref True > out.ref.annotations

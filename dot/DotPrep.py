@@ -22,20 +22,30 @@ class DotPrep:
     def __init__(self):
         self.nucmer = Nucmer()
 
-    def run_shell(self, outdir: str, fasta_ref: str, fasta_qry: str, mincluster: int = 65, gbk_ref: str = None, gbk_qry: str = None, add_standalone_html: bool = True) -> str:
+    def run_shell(self,
+                  html_out: str,
+                  fasta_ref: str, fasta_qry: str,
+                  gbk_ref: str = None, gbk_qry: str = None,
+                  mincluster: int = 65,
+                  outdir: str = None) -> str:
         """
         Run nucmer on FASTAs, run DotPrep, and optionally create Dot annotation files based from GenBank files.
 
-        :param outdir: path to output directory
+        :param html_out: creates a standalone html file that can directly be opened in the browser; if html_out=-, it will not be produced
         :param fasta_ref: path to first assembly FASTA
         :param fasta_qry: path to second assembly FASTA
         :param gbk_ref: path to first GenBank file (optional)
         :param gbk_qry: path to second GenBank file (optional)
         :param mincluster: sets the minimum length of a cluster of matches
-        :param add_standalone_html: creates a html file that can directly be opened in the browser
+        :param outdir: path where intermediary files (coords, coords.idx, delta, etc) should be stored; if none is provided, a temporary directory will be used
         """
-        assert not os.path.isdir(outdir), f'{outdir=} already exists!'
-        os.makedirs(outdir)
+
+        if outdir is None:
+            tempdir = TemporaryDirectory()
+            outdir = tempdir.name
+        else:
+            tempdir = None
+            os.makedirs(outdir)
 
         coords, index = self._run(workdir=outdir, fasta_ref=fasta_ref, fasta_qry=fasta_qry, mincluster=mincluster)
 
@@ -49,8 +59,11 @@ class DotPrep:
             with open(f'{outdir}/out.qry.annotations', 'w') as f:
                 f.write(self.gbk_to_annotation_file(gbk=gbk_qry, is_ref=False, index=index))
 
-        if add_standalone_html:
-            self.add_standalone_html(outdir=outdir, outfile=f'{outdir}/dotplot.html')
+        if html_out != '-':
+            self.add_standalone_html(outdir=outdir, outfile=html_out)
+
+        if tempdir is not None:
+            tempdir.cleanup()
 
         return f'Complete success. {outdir=}'
 
@@ -218,6 +231,18 @@ class DotPrep:
 
     @staticmethod
     def add_standalone_html(outdir: str, outfile: str) -> None:
+        """
+        Creates an interactive, standlone html file that can be used to explore the dotplot.
+
+        The input is a directory that contains the following files:
+          - out.coords
+          - out.coords.idx
+          - out.ref.annotations
+          - out.qry.annotations
+
+        :params outdir: Folder that contains: mandatory: out.coords.idx and out.coords; optional: out.ref.annotations and out.qry.annotations
+        :params outifle: Path to output html file
+        """
         import pkg_resources
         with open(pkg_resources.resource_filename(__name__, 'standalone.html')) as f:
             html = f.read()
@@ -269,6 +294,7 @@ def main():
     fire.Fire({
         'run': dotprep.run_shell,
         'create_annotations': dotprep.gbk_to_annotation_file,
+        'create_standalone_html': dotprep.add_standalone_html,
     })
 
 
