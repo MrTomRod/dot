@@ -15,6 +15,10 @@ And can also be used locally by cloning this repository and simply opening the i
 - This library provides Python bindings for Mummer4's Nucmer, available here: [github.com/mummer4/mummer](https://github.com/mummer4/mummer)
 - Easy installation via pip
 
+# To do:
+- [ ] Add optional title string to html
+- [ ] Create fna from gbk if possible!
+
 ## Installation
 
 This package requires at least `Python 3.9`.

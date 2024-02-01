@@ -30,6 +30,7 @@ setup(
     entry_points={
         'console_scripts': [
             'dot=dot.DotPrep:main',
+            'dotplot=dot.DotPrep:main',  # alias that does not conflict with graphviz
         ]
     },
     include_package_data=True,
